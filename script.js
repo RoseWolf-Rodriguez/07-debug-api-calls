@@ -10,15 +10,27 @@ async function fetchMovies(query) {
   const apiKey = 'your-api-key'; // Replace with your OMDb API key
   const url = `https://www.omdbapi.com/?s=${query}&apikey=${apiKey}`;
 
-  // Fetch data from the API
-  const response = await fetch(url);
-  const data = await response.json();
+  try {
+    // Fetch data from the API
+    const response = await fetch(url);
 
-  // Check if the response contains movies
-  if (data.Response === 'True') {
-    displayMovies(data.Search);
-  } else {
-    movieResults.innerHTML = '<p class="no-results">No results found. Please try a different search.</p>';
+    // Check if the response was successful
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Check if the response contains movies
+    if (data.Response === 'True') {
+      displayMovies(data.Search);
+    } else {
+      movieResults.innerHTML = '<p class="no-results">No results found. Please try a different search.</p>';
+    }
+  } catch (error) {
+    // Log the error and show a user-friendly message
+    console.error('Error fetching movies:', error);
+    movieResults.innerHTML = '<p class="error-message">Sorry, something went wrong while fetching movies. Please try again later.</p>';
   }
 }
 
@@ -49,25 +61,38 @@ async function updateWatchlistDisplay() {
   if (watchlist.size === 0) {
     watchlistContainer.innerHTML = '<p>Your watchlist is empty. Search for movies to add!</p>';
   } else {
+    // Loop through each movie in the watchlist
     watchlist.forEach(async (movieID) => {
       const apiKey = 'your-api-key'; // Replace with your OMDb API key
       const url = `https://www.omdbapi.com/?i=${movieID}&apikey=${apiKey}`;
-      const response = await fetch(url);
-      const movie = await response.json();
+      try {
+        const response = await fetch(url);
 
-      const watchlistCard = document.createElement('div');
-      watchlistCard.classList.add('movie-card');
+        // Check if the response was successful
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
 
-      watchlistCard.innerHTML = `
-        <img src="${movie.Poster}" alt="${movie.Title}" class="movie-poster">
-        <div class="movie-info">
-          <h3 class="movie-title">${movie.Title}</h3>
-          <p class="movie-year">${movie.Year}</p>
-          <button class="btn btn-remove" onclick='removeFromWatchlist("${movie.imdbID}")'>Remove</button>
-        </div>
-      `;
+        const movie = await response.json();
 
-      watchlistContainer.appendChild(watchlistCard);
+        const watchlistCard = document.createElement('div');
+        watchlistCard.classList.add('movie-card');
+
+        watchlistCard.innerHTML = `
+          <img src="${movie.Poster}" alt="${movie.Title}" class="movie-poster">
+          <div class="movie-info">
+            <h3 class="movie-title">${movie.Title}</h3>
+            <p class="movie-year">${movie.Year}</p>
+            <button class="btn btn-remove" onclick='removeFromWatchlist("${movie.imdbID}")'>Remove</button>
+          </div>
+        `;
+
+        watchlistContainer.appendChild(watchlistCard);
+      } catch (error) {
+        // Log the error and show a user-friendly message
+        console.error('Error fetching movie for watchlist:', error);
+        watchlistContainer.innerHTML = '<p class="error-message">Sorry, something went wrong while loading your watchlist. Please try again later.</p>';
+      }
     });
   }
 }
